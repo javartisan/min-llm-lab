@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual env
+venv/
+.venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Hugging Face / training artifacts
+models/
+checkpoints/
+runs/
+wandb/
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.ckpt
+
+# Local env / secrets
+.env
+.env.*
+*.pem

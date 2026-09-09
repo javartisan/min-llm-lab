@@ -1,0 +1,4 @@
+{"prompt":"什么是Java interface？","completion":"interface 是 Java 中用于定义接口规范的类型。"}
+{"prompt":"interface 可以实例化吗？","completion":"不能直接实例化 interface。"}
+{"prompt":"Java 中什么是继承？","completion":"继承允许子类复用父类的属性和方法。"}
+{"prompt":"Java 中什么是多态？","completion":"多态是面向对象编程的重要特征之一。"}
