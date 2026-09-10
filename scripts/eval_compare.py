@@ -10,7 +10,7 @@ from pathlib import Path
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parent.parent
 # 与 sft001.py 对齐：对比 Instruct 底座 vs 微调后模型，更公平
 BASE_DIR = ROOT / "models" / "SmolLM2-135M-Instruct"
 SFT_DIR = ROOT / "models" / "smollm2-135m-java-sft"
@@ -42,7 +42,7 @@ def load_model(model_dir: Path):
     if not (model_dir / "config.json").exists():
         raise FileNotFoundError(
             f"模型目录不存在或不完整: {model_dir}\n"
-            f"请先运行 python sft001.py 下载 Instruct 底座并完成微调。"
+            f"请先运行 python scripts/sft001.py 下载 Instruct 底座并完成微调。"
         )
     tokenizer = AutoTokenizer.from_pretrained(model_dir, local_files_only=True)
     model = AutoModelForCausalLM.from_pretrained(model_dir, local_files_only=True)

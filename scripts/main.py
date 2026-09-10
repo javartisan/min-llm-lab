@@ -2,8 +2,9 @@ from pathlib import Path
 
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
+# 运行（仓库根目录）：python scripts/main.py
 HF_MODEL_ID = "HuggingFaceTB/SmolLM2-135M"
-LOCAL_DIR = Path(__file__).resolve().parent / "models" / "SmolLM2-135M"
+LOCAL_DIR = Path(__file__).resolve().parent.parent / "models" / "SmolLM2-135M"
 
 
 def is_local_model(path: Path) -> bool:

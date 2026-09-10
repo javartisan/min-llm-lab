@@ -1,0 +1,21 @@
+# 本仓库当前环境已验证的依赖（Intel Mac + Python venv）
+# 安装：pip install -r requirements.txt
+
+# 深度学习运行时。Intel Mac 上官方轮子停在 2.2.2
+torch==2.2.2
+
+# Hugging Face 微调栈（训练 / 推理 / 评测都会用到）
+transformers==4.57.6
+tokenizers==0.22.2
+datasets==5.0.1
+peft==0.20.0
+trl==1.12.0
+accelerate==1.14.0
+safetensors==0.8.0
+huggingface_hub==0.36.2
+
+# 数值与进度条（datasets / torch 实际依赖）
+numpy==1.26.4
+
+# 学习路线 Markdown 转 HTML：docs/学习路线/md2html.py
+markdown==3.10.3

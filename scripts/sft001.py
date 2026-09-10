@@ -10,7 +10,7 @@ sft001.py —— 初学者友好的 SFT（Supervised Fine-Tuning）训练脚本
 
 运行：
     source venv/bin/activate
-    python sft001.py
+    python scripts/sft001.py
 """
 
 from pathlib import Path
@@ -48,7 +48,7 @@ from trl import SFTConfig, SFTTrainer
 # Base 模型：只会续写文本，直接拿来做问答容易胡言乱语。
 HF_MODEL_ID = "HuggingFaceTB/SmolLM2-135M-Instruct"
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parent.parent
 # 底座模型本地目录（首次运行会从 Hugging Face 下载并缓存到这里）
 BASE_DIR = ROOT / "models" / "SmolLM2-135M-Instruct"
 # 训练过程中的中间 checkpoint
@@ -250,7 +250,7 @@ def train():
     merged.save_pretrained(OUTPUT_DIR)
     tokenizer.save_pretrained(OUTPUT_DIR)
     print(f"      合并后完整模型: {OUTPUT_DIR}")
-    print("完成！接下来可运行: python eval_compare.py")
+    print("完成！接下来可运行: python scripts/eval_compare.py")
 
 
 if __name__ == "__main__":

@@ -31,3 +31,9 @@ wandb/
 .env
 .env.*
 *.pem
+
+# Generated docs HTML
+docs/学习路线/html/
+
+# uv / 打包产物
+dist/
