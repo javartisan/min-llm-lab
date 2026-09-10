@@ -44,6 +44,7 @@ def main():
     # tokenizer.get_vocab() 返回 dict：token字符串 → id
     vocab = tokenizer.get_vocab()
     print(f"词表条目数 = {len(vocab)}")
+    print(f"词表条类型 = {type(vocab)}")
 
     # 英文常见词通常能直接查到；中文整词不一定在词表里
     for piece in ["Java", "interface", "什么", "多态"]:
