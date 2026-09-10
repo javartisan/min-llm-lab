@@ -1,0 +1,12 @@
+{"prompt":"请解释一下 Java 里的 interface 是什么？","completion":"interface 用于声明一组方法规范，供类去实现。"}
+{"prompt":"Java 接口能不能用 new 创建对象？","completion":"不能，interface 不能直接被实例化。"}
+{"prompt":"继承在 Java 中有什么作用？","completion":"子类可以通过继承复用父类已有的属性和方法。"}
+{"prompt":"请简单说明 Java 多态的含义。","completion":"多态指同一行为在不同对象上可以有不同实现。"}
+{"prompt":"abstract class 和 interface 有什么区别？","completion":"abstract class 可以有实现代码，interface 更侧重定义规范。"}
+{"prompt":"一个类可以实现多个 interface 吗？","completion":"可以，Java 支持一个类实现多个接口。"}
+{"prompt":"Java 中 extends 关键字用来做什么？","completion":"extends 用于声明类继承另一个类。"}
+{"prompt":"方法重写 override 和多态有什么关系？","completion":"子类重写父类方法后，运行时会按实际对象类型调用对应实现，体现多态。"}
+{"prompt":"interface 里的方法默认是什么访问权限？","completion":"接口中的方法默认是 public abstract。"}
+{"prompt":"父类引用可以指向子类对象吗？","completion":"可以，这是多态中向上转型的常见写法。"}
+{"prompt":"为什么说 interface 适合做解耦？","completion":"调用方只依赖接口约定，不依赖具体实现类。"}
+{"prompt":"Java 单继承限制指的是什么？","completion":"一个类只能直接继承一个父类，但可以实现多个接口。"}
