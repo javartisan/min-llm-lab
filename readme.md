@@ -79,3 +79,10 @@ python learn/week01/01_load_tokenizer.py
 | **TRL** | SFT、DPO、GRPO 等后训练 | ⭐⭐⭐⭐ |
 | **PEFT** | LoRA、Adapter 等参数高效微调 | ⭐⭐⭐⭐ |
 | **Accelerate** | CPU/GPU/MPS/分布式训练管理 | ⭐⭐⭐ |
+
+---
+
+## License
+
+本仓库以 [Apache License 2.0](./LICENSE) 开源。Copyright 2026 javartisan。
+
