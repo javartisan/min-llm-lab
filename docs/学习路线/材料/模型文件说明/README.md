@@ -25,6 +25,8 @@
 
 ## 相关其它笔记
 
-- 同级材料：`../微调学习笔记.md`（SFT / DPO / Instruct / 训练流程）
-- 同级材料：`../Encoder-Decoder与LLM问答流程.md`
-- 学习计划：`../../学习计划.md`
+- 材料总索引：[../README.md](../README.md)
+- 同级材料：[微调学习笔记.md](../微调学习笔记.md)（SFT / DPO / Instruct / 训练流程）
+- 同级材料：[Encoder-Decoder与LLM问答流程.md](../Encoder-Decoder与LLM问答流程.md)
+- 第 1 周答疑：[第1周知识体系与答疑.md](../第1周知识体系与答疑.md)
+- 学习计划：[../../学习计划.md](../../学习计划.md)

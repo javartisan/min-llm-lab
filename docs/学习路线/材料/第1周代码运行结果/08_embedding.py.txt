@@ -1,0 +1,49 @@
+# cmd: python learn/week01/08_embedding.py
+# exit: 0
+# captured: 2026-09-11 10:23:16
+# ----------------------------------------
+模型目录 : /Users/tengdelong/PycharmProjects/SmolLM2-135M-sft/models/SmolLM2-135M-Instruct
+原文     : Java
+input_ids: [[39570]]   shape=(1, 1)
+
+============================================================
+【1】Embedding 是一张查找表，不是 Encoder，也不是独立 Embedding 模型
+============================================================
+类型                   : Embedding
+是否即 model.model.embed_tokens : True
+embedding.weight.shape = (49152, 576)  # [词表大小, 向量维度]
+含义：词表里每一个 token，都预先存了一条长度为 576 的向量。
+
+============================================================
+【2】把 id 送进 Embedding = 按行查表
+============================================================
+vectors.shape = (1, 1, 576)  # [batch, seq_len, hidden_size]
+token_id = 39570
+手工取 weight[39570] 与 Embedding 层输出是否一致: True
+这个向量前 8 维: [0.1650390625, -0.158203125, 0.01025390625, -0.078125, -0.07568359375, -0.1328125, 0.06591796875, 0.08447265625]
+
+============================================================
+【3】输出层 lm_head 常常和输入 Embedding 绑在同一张表上
+============================================================
+get_output_embeddings 类型 : Linear
+tie_word_embeddings        : True
+lm_head 与 Embedding 共用权重: True
+输入：id → 向量；输出：向量 → 词表分数。绑定时两边是同一份参数。
+
+============================================================
+【4】Decoder 层与层之间传的也是向量，不是汉字
+============================================================
+三种「输出」不要混：
+  Embedding / Decoder 层 → 向量（给下一层算）
+  lm_head                → logits（对词表打分）
+  tokenizer.decode       → 可读文字
+
+所以：Decoder 名叫解码器，是因为它负责「生成序列」；
+      内部仍然全程做向量运算，最后才变成字。
+
+小结论：
+  - 没有独立 Encoder，也会 Embedding 成向量。
+  - tokenizer.encode ≠ Transformer Encoder。
+  - get_input_embeddings() 取的是内部查表层，不是 BGE 那种检索模型。
+  - SmolLM2 常把输入 Embedding 和 lm_head 绑成同一张表。
+

@@ -1,0 +1,49 @@
+# cmd: python learn/week01/07_forward_logits.py
+# exit: 0
+# captured: 2026-09-11 10:23:12
+# ----------------------------------------
+模型目录: /Users/tengdelong/PycharmProjects/SmolLM2-135M-sft/models/SmolLM2-135M-Instruct
+原文    : Java interface 是什么？
+
+tokenizer() 即 __call__ 的返回类型: BatchEncoding
+输出的键: ['input_ids', 'attention_mask']
+input_ids      : [[39570, 8334, 17097, 242, 124, 15076, 218, 27948, 226, 8083, 249]]   # 每个位置的词表编号
+attention_mask : [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]   # 1=真实 token，0=padding
+两者形状       : (1, 11) (1, 11)   # [batch, seq_len]
+单句无 padding 时 mask 会全是 1。
+
+开始前向（只走一遍网络，不更新参数）...
+logits.shape: (1, 11, 49152)   # [batch, seq_len, vocab_size]
+
+怎么读这个形状：
+  batch      = 这次送进去几句话（这里是 1）
+  seq_len    = 这句话有多少个 token
+  vocab_size = 每个位置都要对「下一个词」打 49152 个分数
+logits: tensor([[[16.2225,  8.4882, 12.0776,  ...,  9.6585, 12.7295,  4.8353],
+         [18.6391,  7.3566, 11.8618,  ..., 11.6618, 13.1463, 10.9376],
+         [13.9767, -0.0537,  1.4048,  ...,  5.5707, 10.3678,  7.7167],
+         ...,
+         [17.4734,  4.3475,  6.7684,  ..., 11.1043, 16.2520, 13.6993],
+         [ 7.4516, -0.4520,  2.1417,  ...,  4.0002,  7.0226,  4.7020],
+         [19.7167, 14.4645, 18.4628,  ..., 14.0495, 16.5822, 12.9501]]])
+last_logits: tensor([19.7167, 14.4645, 18.4628,  ..., 14.0495, 16.5822, 12.9501])
+len(last_logits): 49152
+
+最后一个位置分数最高的 token id = 8083
+对应文字 ≈ '�'
+注意：这只是「下一个碎片」，不是完整答案。
+
+用 generate 循环多走几步，才能看到一段话：
+新生成 ids : [8083, 249, 8083, 249, 8083, 249, 8083, 249, 8083, 249, 8083, 249]
+新生成文字 : ？？？？？？
+如果看起来像乱续写：正常。裸问题没套对话格式，Instruct 模型容易胡编。
+
+套上 chat_template 再生成几步（Day 5 会细讲）：
+对话格式新文字: Java interface is a contract-based interface that defines a set of methods that must be implemented by a
+
+小结论：
+  - tokenizer(...) 调用的是 __call__，给出 input_ids + attention_mask。
+  - input_ids 是内容；attention_mask 标记哪些位置不是 padding。
+  - logits 是分数，还不是概率，更不是最终汉字。
+  - 一次前向 ≠ 生成完整答案；生成是「前向 → 选 1 个 token → 再前向」的循环。
+

@@ -1,0 +1,23 @@
+# cmd: python learn/week01/02_token_and_id.py
+# exit: 0
+# captured: 2026-09-11 10:22:53
+# ----------------------------------------
+Tokenizer: /Users/tengdelong/PycharmProjects/SmolLM2-135M-sft/models/SmolLM2-135M-Instruct
+原文: how are you？
+------------------------------------------------------------
+序号    token(原始)             decode后         input_id  
+------------------------------------------------------------
+0     how                   how             6778      
+1     ▁are                   are            359       
+2     ▁you                   you            346       
+3     ï¼                    �               8083      
+4     Ł                     �               249       
+------------------------------------------------------------
+tokens     = ['how', 'Ġare', 'Ġyou', 'ï¼', 'Ł']
+input_ids  = [6778, 359, 346, 8083, 249]
+token 数量 = 5
+
+小结论：
+  - token 是片段，input_id 是数字。模型计算用的是数字。
+  - 同一个字/词每次编码得到的 id 是固定的（词表不变）。
+

@@ -1,0 +1,58 @@
+# cmd: python learn/week01/06_read_dataset.py
+# exit: 0
+# captured: 2026-09-11 10:23:05
+# ----------------------------------------
+============================================================
+训练集 TRAIN: /Users/tengdelong/PycharmProjects/SmolLM2-135M-sft/data/train.jsonl
+============================================================
+条数 = 306
+字段 = ['prompt', 'completion']
+
+  样本 1
+    prompt     : 什么是Java interface？
+    completion : interface 是 Java 中用于定义接口规范的类型。
+
+  样本 2
+    prompt     : interface 可以实例化吗？
+    completion : 不能直接实例化 interface。
+
+  样本 3
+    prompt     : Java 中什么是继承？
+    completion : 继承允许子类复用父类的属性和方法。
+
+============================================================
+测试集 TEST: /Users/tengdelong/PycharmProjects/SmolLM2-135M-sft/data/test.jsonl
+============================================================
+条数 = 12
+字段 = ['prompt', 'completion']
+
+  样本 1
+    prompt     : 请解释一下 Java 里的 interface 是什么？
+    completion : interface 用于声明一组方法规范，供类去实现。
+
+  样本 2
+    prompt     : Java 接口能不能用 new 创建对象？
+    completion : 不能，interface 不能直接被实例化。
+
+  样本 3
+    prompt     : 继承在 Java 中有什么作用？
+    completion : 子类可以通过继承复用父类已有的属性和方法。
+
+============================================================
+为什么测试集不能拿去训练？
+============================================================
+  训练 = 用标准答案改参数，模型会越来越像训练集。
+  如果测试题也拿去训练，考试时等于「提前看过答案」，分数虚高。
+  所以 test.jsonl 只在评测脚本（eval_compare.py）里使用。
+
+============================================================
+作业（请你自己动手，本脚本不会改数据文件）
+============================================================
+  在 data/train.jsonl 末尾新增 2 条短 Java 问答，格式完全一致：
+  {"prompt":"你的问题","completion":"一两句标准答案"}
+  注意：不要写进 test.jsonl。
+
+小结论：
+  - prompt 是问题，completion 是要模仿的答案。
+  - 训练/测试必须分开，否则评测不可信。
+

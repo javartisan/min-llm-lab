@@ -1,0 +1,48 @@
+# cmd: python learn/week01/12_week1_chain.py
+# exit: 0
+# captured: 2026-09-11 10:23:30
+# ----------------------------------------
+使用模型: /Users/tengdelong/PycharmProjects/SmolLM2-135M-sft/models/SmolLM2-135M-Instruct
+
+一条真实训练问题: 什么是Java interface？
+
+① 文本
+   人能看懂的字符串，模型还不能直接算。
+
+② Tokenizer
+   tokens = ['ä»', 'Ģ', 'ä¹', 'Ī', 'æĺ¯', 'Java', 'Ġinterface', 'ï¼', 'Ł']
+
+③ input_ids
+   input_ids = [[15076, 218, 27948, 226, 27830, 39570, 8334, 8083, 249]]
+   这是 tokenizer.encode，不是 Transformer Encoder。
+
+④ Embedding + Decoder（没有独立 Encoder）
+   Embedding 后向量形状 = (1, 9, 576)  # [1, seq, 576]
+   随后 Decoder 各层继续：向量 → 向量（不是直接出汉字）
+
+⑤ logits
+   logits.shape = (1, 9, 49152)  # [1, seq, vocab]
+   分数还不是概率，更不是完整答案。
+
+⑥⑦⑧ Loss → Backward → 更新（训练才有；推理没有）
+   loss = 4.8282
+   Embedding 梯度范数 = 18.493605
+   Backward 没有生成新文本，只算出参数怎么改。
+   optimizer.step() 之后，权重已经往降低 Loss 的方向挪了一点。
+
+============================================================
+验收口答（对照学习计划第 1 周）
+============================================================
+Q: 问答有没有 Encoder？
+A: 没有独立 Encoder 模块；但一定有 tokenizer.encode 和 Embedding。
+
+Q: Decoder 为何产出向量？
+A: Decoder 是神经网络，层与层之间传向量；
+   tokenizer.decode 才把最后的 token id 还原成文字。
+
+Q: 本项目 SFT 数据格式？
+A: jsonl 的 prompt/completion，训练前转成 messages，
+   再用 chat_template 拼成对话文本。
+
+完整链：Tokenizer → Dataset → Forward → Loss → Backward
+

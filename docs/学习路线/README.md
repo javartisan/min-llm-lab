@@ -7,16 +7,15 @@
 ```text
 docs/学习路线/
 ├── README.md                 # 本说明
-├── 学习大纲.md               # 5 周目标总览
-├── 学习计划.md               # 可执行详细计划
-└── 材料/                     # 计划中引用的阅读材料（已内置，无需再到外部 docs）
-    ├── Encoder-Decoder与LLM问答流程.md
-    ├── 微调学习笔记.md
-    ├── 第1周知识体系与答疑.md   # 第 1 周脚本相关答疑（BPE/训练一步/大厂评测）
-    └── 模型文件说明/
-        ├── README.md
-        ├── 01-目录与各文件总览.md
-        └── 02-tokenizer.json结构说明.md
+├── 学习大纲.md               # 5 周目标 + 第 1 周材料×代码对照
+├── 学习计划.md               # 可执行详细计划（每日命令）
+├── md2html.py                # Markdown → html/ 静态站点
+├── gen_week01_page.py        # 汇总 week01 源码 + 运行结果
+├── html/                     # 生成物，nginx 站点根（gitignore）
+└── 材料/
+    ├── 第1周知识体系与答疑.md
+    ├── 第1周代码学习.md      # 由 gen_week01_page.py 生成
+    └── 第1周代码运行结果/    # 各脚本 stdout 缓存
 ```
 
 ## 建议阅读顺序
@@ -31,6 +30,8 @@ docs/学习路线/
 # 在仓库根目录执行
 python docs/学习路线/md2html.py
 python docs/学习路线/md2html.py --open
+# 重新跑 learn/week01 并把输出写进「第 1 周代码学习」页
+python docs/学习路线/md2html.py --run-week01
 ```
 
 生成目录：`docs/学习路线/html/`

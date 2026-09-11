@@ -170,6 +170,7 @@ pre {
   border-radius: 10px;
   padding: 14px 16px;
   overflow: auto;
+  max-height: 42rem;
 }
 pre code { background: transparent; color: inherit; padding: 0; }
 table {
@@ -228,8 +229,12 @@ NAV_TREE = [
 ]
 
 NAV_MATERIALS = [
+    ("材料索引", "材料/README.html"),
     ("Encoder-Decoder 与问答流程", "材料/Encoder-Decoder与LLM问答流程.html"),
     ("微调学习笔记", "材料/微调学习笔记.html"),
+    ("第1周知识体系与答疑", "材料/第1周知识体系与答疑.html", [
+        ("第 1 周 代码学习", "材料/第1周代码学习.html"),
+    ]),
     ("模型文件说明索引", "材料/模型文件说明/README.html"),
     ("01 目录与各文件总览", "材料/模型文件说明/01-目录与各文件总览.html"),
     ("02 tokenizer.json 结构", "材料/模型文件说明/02-tokenizer.json结构说明.html"),
@@ -237,10 +242,11 @@ NAV_MATERIALS = [
 
 
 def list_md_files(src_root: Path) -> list[Path]:
+    skip_dir_names = {"html", "第1周代码运行结果"}
     return sorted(
         p
         for p in src_root.rglob("*.md")
-        if "html" not in p.parts and p.name != "md2html.py"
+        if not any(part in skip_dir_names for part in p.parts)
     )
 
 
@@ -342,8 +348,18 @@ def build_sidebar(current_rel: Path, out_root_names: set[str]) -> str:
         active = " active" if current_rel.as_posix() == target_path else ""
         return f'<li><a class="{active.strip()}" href="{html.escape(href)}">{html.escape(label)}</a></li>'
 
-    entrances = "\n".join(link(a, b) for a, b in NAV_TREE)
-    materials = "\n".join(link(a, b) for a, b in NAV_MATERIALS)
+    def render_nav(items: list) -> str:
+        chunks = []
+        for entry in items:
+            label, target = entry[0], entry[1]
+            chunks.append(link(label, target))
+            if len(entry) >= 3 and entry[2]:
+                kids = "\n".join(link(a, b) for a, b in entry[2])
+                chunks.append(f'<ul class="sub">{kids}</ul>')
+        return "\n".join(chunks)
+
+    entrances = render_nav(NAV_TREE)
+    materials = render_nav(NAV_MATERIALS)
     return f"""
 <aside class="sidebar">
   <div class="brand"><a href="{html.escape(make_relative(current_rel, Path('index.html')))}">SmolLM 学习路线</a></div>
@@ -438,11 +454,14 @@ def convert_one(
 def build_home(src_root: Path, out_root: Path, graph: dict[Path, list[Path]], titles: dict[Path, str], md_files: list[Path]) -> Path:
     # recommended path cards
     cards = [
-        ("1. 学习大纲", "学习大纲.html", "5 周目标与知识链"),
+        ("1. 学习大纲", "学习大纲.html", "5 周目标、第 1 周材料×代码对照"),
         ("2. 学习计划", "学习计划.html", "每日任务、验收、章节跳转入口"),
-        ("3. 疑虑精读", "材料/Encoder-Decoder与LLM问答流程.html", "Encoder/Decoder/向量化"),
-        ("4. 微调笔记", "材料/微调学习笔记.html", "SFT / LoRA / DPO"),
-        ("5. 模型文件", "材料/模型文件说明/README.html", "config / tokenizer / 权重"),
+        ("3. 材料索引", "材料/README.html", "全部阅读包 + 第 1 周脚本对照"),
+        ("4. 第1周知识体系", "材料/第1周知识体系与答疑.html", "BPE / Embedding / train / 评测"),
+        ("5. 第 1 周代码学习", "材料/第1周代码学习.html", "week01 源码与一次真实运行结果"),
+        ("6. 疑虑精读", "材料/Encoder-Decoder与LLM问答流程.html", "Encoder/Decoder/向量化"),
+        ("7. 微调笔记", "材料/微调学习笔记.html", "SFT / LoRA / DPO"),
+        ("8. 模型文件", "材料/模型文件说明/README.html", "config / tokenizer / 权重"),
     ]
 
     card_html = []
@@ -548,10 +567,25 @@ def main():
     parser.add_argument("--src", type=Path, default=ROOT)
     parser.add_argument("--out", type=Path, default=None)
     parser.add_argument("--open", action="store_true")
+    parser.add_argument(
+        "--run-week01",
+        action="store_true",
+        help="重新执行 learn/week01 脚本，捕获输出后再生成「第 1 周代码学习」页",
+    )
     args = parser.parse_args()
 
     src_root = args.src.resolve()
     out_root = (args.out or (src_root / "html")).resolve()
+
+    if str(ROOT) not in sys.path:
+        sys.path.insert(0, str(ROOT))
+    from gen_week01_page import run_all as run_week01, write_markdown as write_week01_md
+
+    if args.run_week01:
+        print("正在运行 learn/week01 并捕获输出…")
+        run_week01()
+    week01_md = write_week01_md()
+    print(f"第 1 周代码学习: {week01_md}\n")
 
     md_files = list_md_files(src_root)
     if not md_files:

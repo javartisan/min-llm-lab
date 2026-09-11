@@ -12,6 +12,57 @@
 
 运行
     python learn/week01/10_sft_messages.py
+
+----------------------------------------------------------------------
+科普：apply_chat_template 在干什么？
+
+messages 只是 Python 列表（role + content）。模型不认识这个列表，
+只认识「按它预训练时见过的格式拼出来的一整段字符串」。
+
+apply_chat_template = 用模型目录里的 chat_template.jinja（ChatML）
+把消息列表渲染成那段字符串。人手拼 <|im_start|> 容易漏符号；
+走模板才能和 Instruct 训练时的格式对齐。
+
+    messages（人看的结构）
+        ↓  apply_chat_template
+    一段带 <|im_start|>role ... <|im_end|> 的文本（模型看的格式）
+        ↓  再 tokenizer(...)  （本脚本先不这一步）
+    input_ids
+
+本脚本用到的三个参数：
+
+    第 1 个位置参数 conversation / messages
+        消息列表。每条是 {"role": "...", "content": "..."}。
+        role 只能是模板认识的：system / user / assistant。
+        训练：三轮都给（含 assistant 标准答案）。
+        推理：只给已经发生的轮次（system + user），答案还没写出来。
+
+    tokenize=False
+        False：返回 str，方便 print 对照。
+        True（默认）：内部再 encode，直接返回 input_ids。
+        学习阶段先看字符串；真正进模型时再 tokenizer(text, return_tensors="pt")。
+
+    add_generation_prompt
+        False：只渲染你传入的消息，到最后一条的 <|im_end|> 为止。
+                训练用：文本里已经包含 assistant 答案，当标签学。
+        True ：在末尾再追加「assistant 开始说话」的提示
+                （本模型是 <|im_start|>assistant 换行）。
+                推理用：告诉模型「从这里开始生成回复」，
+                不要再续写 user，也不要先输出 <|im_end|> 把自己结束掉。
+
+其它常用参数（本脚本未传，知道即可）：
+
+    return_tensors="pt"   tokenize=True 时，顺便做成张量
+    padding / truncation / max_length   批处理补齐、截断
+    continue_final_message=True         最后一条消息还没说完，不要先加 <|im_end|>
+    chat_template=...                   临时换一套模板（一般不用，用模型自带的）
+
+训练 vs 推理对照（本脚本会打印两段）：
+
+    训练  messages 含 assistant + add_generation_prompt=False
+          → 完整对话，含标准答案
+    推理  messages 只有 system/user + add_generation_prompt=True
+          → 停在 <|im_start|>assistant 之后，等 generate 续写
 """
 
 import json
@@ -69,21 +120,28 @@ def main():
     print("=" * 60)
     print("【4】chat_template：messages → 模型真正吃进去的文本")
     print("=" * 60)
-    # tokenize=False：只要字符串，先不要变成 id，方便人看
-    # add_generation_prompt=False：这是「完整对话」（含答案），用于训练
+    # apply_chat_template：按 chat_template.jinja 把 messages 拼成 ChatML 字符串。
+    # 不是再训练一遍，只是「填模板」。
     train_text = tokenizer.apply_chat_template(
+        # conversation：完整三轮（system / user / assistant），assistant 里是标准答案
         messages,
+        # tokenize：False=返回字符串；True=直接返回 token id（默认 True）
         tokenize=False,
+        # add_generation_prompt：False=渲染到最后一条消息结束为止，不再追加
+        # 「assistant 开口」标记。训练需要整段含答案的文本当标签。
         add_generation_prompt=False,
     )
     print("--- 训练时看到的文本（含 assistant 答案）---")
     print(train_text)
 
-    # 推理时还没有答案，要在末尾留下「assistant 开始说话」的位置
-    infer_messages = messages[:2]  # 只留 system + user
+    # 推理时还没有答案：不能把 completion 塞进 messages，否则等于把标准答案泄露给模型。
+    infer_messages = messages[:2]  # 只留 system + user，去掉 assistant
     infer_text = tokenizer.apply_chat_template(
+        # conversation：只有已经发生的轮次，没有答案
         infer_messages,
-        tokenize=False,
+        tokenize=False,  # 同样先看字符串；真正生成前再 tokenizer(infer_text, return_tensors="pt")
+        # True=在末尾追加 <|im_start|>assistant 和换行，把光标放到「该模型说话」的位置。
+        # generate() 从这里往后续写；若仍 False，模型可能接着写 user 或立刻结束。
         add_generation_prompt=True,
     )
     print("--- 推理时看到的文本（等模型接着写 assistant）---")
