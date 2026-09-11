@@ -1,0 +1,6 @@
+{"script": "01_lora_idea", "demo_in": 576, "demo_r16_lora": 18432, "demo_r16_full": 331776, "ts": "2026-09-11T15:37:55"}
+{"script": "03_adapter_files", "adapter_final_exists": true, "merged_exists": true, "adapter_weight_mb": 18.685401916503906, "merged_weight_mb": 513.1630020141602, "n_adapter_dirs": 3, "ts": "2026-09-11T15:37:59"}
+{"script": "02_inject_and_count", "device": "mps", "model": "SmolLM2-135M-Instruct", "full_params": 134515008, "full_trainable": 134515008, "lora_total_params": 139399488, "lora_trainable": 4884480, "trainable_pct": 3.5039, "steps": 3, "oom": false, "error": "", "avg_step_s": 1.270859255339019, "steps_per_s": 0.7868691956240554, "last_loss": 2.9312655925750732, "rss_mb": 490.45703125, "ts": "2026-09-11T15:38:23"}
+{"script": "01_lora_idea", "demo_in": 576, "demo_r16_lora": 18432, "demo_r16_full": 331776, "ts": "2026-09-11T16:07:52"}
+{"script": "03_adapter_files", "adapter_final_exists": true, "merged_exists": true, "adapter_weight_mb": 18.685401916503906, "merged_weight_mb": 513.1630020141602, "n_adapter_dirs": 3, "ts": "2026-09-11T16:40:23"}
+{"script": "07_try_1p7b", "model": "SmolLM2-1.7B-Instruct", "load_ok": false, "skipped": true, "error": "local weights missing; pass --download to fetch", "ts": "2026-09-11T16:40:50"}

@@ -27,7 +27,34 @@
 
     和真·batch=2 不完全相同（BatchNorm 等会有差别；本模型几乎不用 BN），
     但对 Causal LM + 本仓库这种小实验，直觉够用。
+
+----------------------------------------------------------------------
+科普：怎么读本脚本打出来的三行（有效 batch 都是 4）
+
+一次真实输出举例（你的机器数字会变，读法不变）：
+
+    bs=4  accum=1  有效batch=4   秒/步=0.503    RSS=692.8   OOM=否
+    bs=2  accum=2  有效batch=4   秒/步=0.984    RSS=872.0   OOM=否
+    bs=1  accum=4  有效batch=4   秒/步=1.899    RSS=1049.9  OOM=否
+
+三档都在模拟「一次更新大约用 4 条样本」，差的是怎么凑这 4 条：
+
+    A  bs=4 accum=1  一次前向塞 4 条，立刻 step     → 每个更新只算 1 次前向
+    B  bs=2 accum=2  前向 2 次再 step
+    C  bs=1 accum=4  前向 4 次再 step
+
+秒/步：0.503 → 0.984 → 1.899，大约 1 : 2 : 3.8，和 accum=1、2、4 对齐。
+    C 更慢是设计如此：同一次 optimizer.step() 里多做了几次前向+反传。
+    用时间换的是「每次前向更小」。OOM=否 表示这三档在本机都跑通了。
+
+RSS 不要读成「小 batch 更吃内存」。
+    脚本在同一个进程里按 A→B→C 顺序跑，RSS 用的是 ru_maxrss（高水位，只升不降）。
+    A 跑完高水位已经在；B、C 再跑，数字只会叠上去（692→872→1049），
+    不能说明 bs=1 比 bs=4 更占内存。
+    理论上峰值激活应是 bs=4 更大、bs=1 更小。
+    要公平比内存：三个配置分三次启动进程，或看设备已分配内存且每次清空缓存。
 """
+
 
 from _common import (
     append_run,
@@ -86,14 +113,18 @@ def main():
     free_model(model)
 
     print()
-    print("怎么读：")
+    print("怎么读（有效 batch 都是 4，只改「一次塞几条 vs 累积几次」）：")
+    print("  - 秒/步大致按 accum 变：A 最快（1 次前向），C 最慢（4 次前向再 step）。")
+    print("    例：0.50s → 0.98s → 1.90s 约等于 1 : 2 : 4，这是预期，不是故障。")
     print("  - 若 A OOM、C 能跑：这就是累积的意义——用时间换峰值内存。")
-    print("  - 秒/步：C 往往更慢（同一次 step 里做了 4 次前向）。")
+    print("  - RSS 是进程高水位，本脚本三档连着跑，数字只会越来越大，")
+    print("    不能据此说「bs=1 比 bs=4 更吃内存」。要比内存请分三次启动。")
     print("  - 正式训练里 SFTConfig 的 gradient_accumulation_steps 就是这件事。")
     print()
     print("小结论：")
     print("  - 有效 batch = micro_batch × accum。")
-    print("  - 内存看 micro_batch；更新频率看有效 batch。")
+    print("  - 时间看 accum（前向次数）；峰值内存理论上看 micro_batch。")
+    print("  - 本脚本的 RSS 列不能用来验证「累积更省内存」。")
 
 
 if __name__ == "__main__":

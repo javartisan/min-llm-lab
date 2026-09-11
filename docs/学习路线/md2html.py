@@ -19,6 +19,7 @@ from __future__ import annotations
 import argparse
 import html
 import re
+import shutil
 import sys
 import webbrowser
 from collections import defaultdict
@@ -59,6 +60,7 @@ TITLE_RE = re.compile(r"^#\s+(.+)$", re.M)
 
 
 SITE_CSS = """
+html.llm-gate { visibility: hidden; }
 :root {
   --bg: #f5f5f7;
   --sidebar: #111113;
@@ -471,8 +473,12 @@ NAV_TREE = [
     ("首页", "index.html"),
     ("学习大纲", "学习大纲.html"),
     ("学习计划", "学习计划.html"),
+    ("LoRA 原理动画", "lora_animation.html"),
     ("README", "README.html"),
 ]
+
+# 不是由 Markdown 生成、需要原样复制进 html/ 的页面
+EXTRA_STATIC = ["lora_animation.html", "login.html", "auth.js"]
 
 NAV_MATERIALS = [
     ("材料索引", "材料/README.html"),
@@ -609,11 +615,12 @@ def build_sidebar(current_rel: Path, out_root_names: set[str]) -> str:
     entrances = render_nav(NAV_TREE)
     materials = render_nav(NAV_MATERIALS)
     home = html.escape(make_relative(current_rel, Path("index.html")))
+    logout = html.escape(make_relative(current_rel, Path("login.html")) + "?logout=1")
     return f"""
 <aside class="sidebar">
   <div class="sidebar-top">
     <div class="brand"><a href="{home}">SmolLM 学习路线</a></div>
-    <p class="hint">Javartisan · 学习站点</p>
+    <p class="hint">Javartisan · 学习站点 · <a href="{logout}">退出</a></p>
   </div>
   <nav class="sidebar-nav" aria-label="站点导航">
     <div class="sidebar-nav-inner">
@@ -771,13 +778,15 @@ def convert_one(
         extra_css = CODE_LAB_CSS + pygments_css()
         body_class = ' class="page-code-lab"'
 
+    auth_src = html.escape(make_relative(rel_html, Path("auth.js")))
     page = f"""<!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" class="llm-gate">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{html.escape(title)} · 学习路线</title>
   <style>{SITE_CSS}{extra_css}</style>
+  <script src="{auth_src}"></script>
 </head>
 <body{body_class}>
   <div class="layout">
@@ -809,6 +818,7 @@ def build_home(src_root: Path, out_root: Path, graph: dict[Path, list[Path]], ti
         ("5. 第 1 周代码学习", "材料/第1周代码学习.html", "week01 源码与一次真实运行结果"),
         ("6. 疑虑精读", "材料/Encoder-Decoder与LLM问答流程.html", "Encoder/Decoder/向量化"),
         ("7. 微调笔记", "材料/微调学习笔记.html", "SFT / LoRA / DPO"),
+        ("7b. LoRA 原理动画", "lora_animation.html", "冻底座 + 旁路 A/B，对照 r / alpha / target_modules"),
         ("8. 模型文件", "材料/模型文件说明/README.html", "config / tokenizer / 权重"),
         ("9. 第2周 Auto 工厂", "材料/第2周-BaseAutoModelClass与Auto家族.html", "_BaseAutoModelClass / AutoModelFor*"),
         ("10. 第2周 上下文长度", "材料/第2周-模型上下文长度涉及的因素.html", "出厂窗口 vs num_ctx / 为何难到 1M"),
@@ -840,12 +850,13 @@ def build_home(src_root: Path, out_root: Path, graph: dict[Path, list[Path]], ti
     rel_html = Path("index.html")
     sidebar = build_sidebar(rel_html, set())
     page = f"""<!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" class="llm-gate">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>学习路线站点首页</title>
   <style>{SITE_CSS}</style>
+  <script src="auth.js"></script>
 </head>
 <body>
   <div class="layout">
@@ -960,6 +971,16 @@ def main():
     for src in md_files:
         dst = convert_one(src, src_root, out_root, graph, titles)
         print(f"  ✓ {src.relative_to(src_root)} → {dst.relative_to(out_root)}")
+
+    for name in EXTRA_STATIC:
+        src = src_root / name
+        if not src.exists():
+            print(f"  跳过静态文件（未找到）: {name}")
+            continue
+        dst = out_root / name
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, dst)
+        print(f"  ✓ 静态 {name} → {dst.relative_to(out_root)}")
 
     index = build_home(src_root, out_root, graph, titles, md_files)
     nginx = write_nginx_example(out_root)

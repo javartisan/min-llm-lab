@@ -9,7 +9,8 @@
 | 文档 | 一句话 | 配合代码 |
 |---|---|---|
 | [Encoder-Decoder与LLM问答流程.md](./Encoder-Decoder与LLM问答流程.md) | 问答有没有 Encoder、向量从哪来 | `07_forward_logits.py`、`08_embedding.py`、`12_week1_chain.py` |
-| [微调学习笔记.md](./微调学习笔记.md) | Base vs Instruct、SFT、DPO、LoRA、训练 8 步 | `09_loss_backward.py`、`10_sft_messages.py`、`scripts/sft001.py` |
+| [微调学习笔记.md](./微调学习笔记.md) | Base vs Instruct、SFT、DPO、LoRA、训练 8 步 | `09_loss_backward.py`、`10_sft_messages.py`、`scripts/sft001.py`、`learn/week03/` |
+| [LoRA 训练动画](../lora_animation.html) | 冻底座 + 旁路 A/B 可视化 | 第 3 周 [Day 1](../学习计划.md#week3-day1)、`01_lora_idea.py` |
 | [第1周知识体系与答疑.md](./第1周知识体系与答疑.md) | 概念答疑 + 第 7 节逐脚本代码导读（01～12、`call.py`、`dropout.py`） | `learn/week01/` 全套、`learn/py/` |
 | [第1周代码学习.md](./第1周代码学习.md) | week01 **源码 + 运行结果**（侧栏在答疑下面） | `learn/week01/` 01～12、`_common.py` |
 | [模型文件说明/README.md](./模型文件说明/README.md) | 模型目录里每个文件干什么 | `01_load_tokenizer.py`、`scripts/print_tokens.py` |
@@ -47,9 +48,24 @@ BaseAutoModelClass 文档 §1～§5  →  Day 2：读 Auto 工厂 + 02_move_to_d
 上下文长度（出厂 vs 运行时）   →  第2周-模型上下文长度涉及的因素.md
 ```
 
+## 第 3 周：材料 → 脚本
+
+先看：[LoRA 训练动画](../lora_animation.html)（[学习计划 Day 1](../学习计划.md#week3-day1)）。
+
+```text
+LoRA 训练动画 + 微调笔记 §6            →  Day 1 概念（lora_animation.html）
+微调笔记 §6 + sft001.build_lora_config  →  01 低秩公式（不加载大模型）
+注入 get_peft_model、数可训练参数      →  02
+adapter vs merge 体积                   →  03（无 checkpoint 也能看概念）
+每次只改一个旋钮                        →  04 r / 05 dropout / 06 target_modules
+可选 1.7B + LoRA                        →  07（失败记下瓶颈）
+验收口答 + reports/week03_lora.md       →  08
+```
+
 一律在仓库根目录执行，例如：
 
 ```bash
 python learn/week01/01_load_tokenizer.py
 python learn/week02/01_probe_device.py
+python learn/week03/01_lora_idea.py
 ```

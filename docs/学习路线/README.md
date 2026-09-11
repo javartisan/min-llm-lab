@@ -10,6 +10,7 @@ docs/学习路线/
 ├── 学习大纲.md               # 5 周目标 + 第 1 周材料×代码对照
 ├── 学习计划.md               # 可执行详细计划（每日命令）
 ├── md2html.py                # Markdown → html/ 静态站点
+├── lora_animation.html       # LoRA 原理动画（第 3 周 Day 1）
 ├── gen_week01_page.py        # 汇总 week01 源码 + 运行结果
 ├── html/                     # 生成物，nginx 站点根（gitignore）
 └── 材料/
@@ -63,7 +64,10 @@ nginx 部署：把 `html/` 设为 `root`，可参考生成的 `html/nginx.exampl
 bash docs/学习路线/deploy_github_pages.sh
 ```
 
-发布后页面：https://javartisan.github.io/llm/
+发布后页面：https://javartisan.github.io/llm/  
+自定义域名：[https://www.devtool-lab.com/llm](https://www.devtool-lab.com/llm)
+
+站点带登录门禁（`login.html` + `auth.js`）。未登录会跳到登录页；侧栏可退出。口令不以明文写在脚本里。
 
 ## 说明
 

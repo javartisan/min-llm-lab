@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>登录 · SmolLM 学习路线</title>
+  <script src="auth.js"></script>
+  <style>
+    :root {
+      --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC",
+        "Hiragino Sans GB", "Helvetica Neue", "Microsoft YaHei", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: var(--font);
+      color: #e8eef8;
+      background:
+        radial-gradient(90% 60% at 50% -10%, #1e3a6e 0%, transparent 55%),
+        linear-gradient(180deg, #10141c 0%, #07090e 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 28px 16px;
+      -webkit-font-smoothing: antialiased;
+    }
+    .card {
+      width: 100%;
+      max-width: 400px;
+      background: rgba(16, 22, 34, .78);
+      border: 1px solid rgba(100, 160, 255, .22);
+      border-radius: 20px;
+      padding: 32px 28px 26px;
+      box-shadow: 0 28px 70px -28px rgba(20, 60, 160, .7);
+      backdrop-filter: blur(12px);
+    }
+    .brand {
+      font-size: 13px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: #8aa0c2;
+      margin: 0 0 8px;
+    }
+    h1 {
+      margin: 0 0 6px;
+      font-size: 24px;
+      letter-spacing: -.02em;
+    }
+    .sub {
+      margin: 0 0 22px;
+      color: #8b9bb3;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      color: #b7c6dc;
+      margin: 0 0 6px;
+    }
+    input {
+      width: 100%;
+      font: inherit;
+      font-size: 15px;
+      color: #f3f7ff;
+      background: rgba(8, 12, 20, .7);
+      border: 1px solid rgba(148, 175, 220, .22);
+      border-radius: 12px;
+      padding: 11px 12px;
+      outline: none;
+      margin-bottom: 14px;
+    }
+    input:focus {
+      border-color: #64d2ff;
+      box-shadow: 0 0 0 3px rgba(100, 210, 255, .18);
+    }
+    button {
+      width: 100%;
+      margin-top: 6px;
+      font: inherit;
+      font-size: 15px;
+      font-weight: 650;
+      color: #081018;
+      background: linear-gradient(180deg, #93c5fd, #3b82f6);
+      border: 0;
+      border-radius: 12px;
+      padding: 12px;
+      cursor: pointer;
+    }
+    button:hover { filter: brightness(1.06); }
+    button:disabled { opacity: .65; cursor: wait; }
+    .err {
+      min-height: 22px;
+      margin: 10px 0 0;
+      font-size: 13px;
+      color: #fda4af;
+    }
+    .hint {
+      margin: 16px 0 0;
+      font-size: 12px;
+      color: #6e7f99;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <form class="card" id="form" autocomplete="on">
+    <p class="brand">Javartisan</p>
+    <h1>学习路线登录</h1>
+    <p class="sub">登录后可阅读大纲、计划、材料与 LoRA 动画。</p>
+    <label for="user">用户名</label>
+    <input id="user" name="username" type="text" autocomplete="username" required />
+    <label for="pass">密码</label>
+    <input id="pass" name="password" type="password" autocomplete="current-password" required />
+    <button type="submit" id="btn">进入站点</button>
+    <p class="err" id="err"></p>
+    <p class="hint">本页仅作站点访问门禁。关闭标签页后需要重新登录。</p>
+  </form>
+  <script>
+    (function () {
+      var form = document.getElementById("form");
+      var btn = document.getElementById("btn");
+      var err = document.getElementById("err");
+      if (window.LlmAuth && LlmAuth.authed()) {
+        LlmAuth.goNext();
+        return;
+      }
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        err.textContent = "";
+        btn.disabled = true;
+        btn.textContent = "校验中…";
+        var user = document.getElementById("user").value.trim();
+        var pass = document.getElementById("pass").value;
+        LlmAuth.login(user, pass)
+          .then(function (ok) {
+            if (ok) {
+              LlmAuth.goNext();
+              return;
+            }
+            err.textContent = "用户名或密码不正确";
+            btn.disabled = false;
+            btn.textContent = "进入站点";
+          })
+          .catch(function () {
+            err.textContent = "当前浏览器无法完成校验，请换用较新的 Chrome / Safari / Edge";
+            btn.disabled = false;
+            btn.textContent = "进入站点";
+          });
+      });
+    })();
+  </script>
+</body>
+</html>
