@@ -237,46 +237,56 @@ def timed_train_steps(model, batch: dict, *, steps: int = 3, lr: float = 1e-4) -
     只优化 requires_grad=True 的参数（挂 LoRA 后就是补丁）。
     先空跑一步清掉编译/缓存干扰，再计时。不是完整 SFT，不要看这几步比效果。
     """
+    # 切到训练模式：Dropout 等按「训练时」规则工作。它本身不改权重。
     model.train()
+    # 只收集允许被梯度更新的张量。挂 LoRA 后这里几乎只剩 A/B，底座冻住进不来。
     params = [p for p in model.parameters() if p.requires_grad]
+    # 优化器登记这些参数。SGD（Stochastic Gradient Descent 随机梯度下降） 不负责前向，只在 step() 时用 .grad 改参数值。
     optimizer = torch.optim.SGD(params, lr=lr)
+    # 参数在哪块设备上，后面 MPS 同步就跟这块走。
     device = next(model.parameters()).device
+    # 清掉可能残留的旧梯度。set_to_none=True 比填 0 更省一点。
     optimizer.zero_grad(set_to_none=True)
+    # 热身：先完整走一遍前向+反传，把首次编译/缓存的开销甩掉，不计入后面计时。
     (model(**batch).loss).backward()
+    # 热身产生的梯度不要留下来，正式计时步从零梯度开始。
     optimizer.zero_grad(set_to_none=True)
 
-    times: list[float] = []
-    last_loss = None
-    oom = False
-    err = ""
+    times: list[float] = []  # 每一步墙钟耗时（秒）
+    last_loss = None  # 最后一步的标量 loss，给屏幕/jsonl 看
+    oom = False  # 是否在循环里撞上显存/内存不够
+    err = ""  # OOM 时记下原始报错，其它异常继续往上抛
     try:
+        # 正式计时的训练步。每步都用同一个 batch，只为测速度，不是认真刷数据。
         for _ in range(steps):
-            t0 = time.perf_counter()
-            optimizer.zero_grad(set_to_none=True)
-            loss = model(**batch).loss
-            loss.backward()
-            optimizer.step()
-            last_loss = float(loss.detach().cpu())
+            t0 = time.perf_counter()  # 本步开始时间（高精度时钟）
+            optimizer.zero_grad(set_to_none=True)  # 先清梯度，避免和上一步累加
+            loss = model(**batch).loss  # 前向：batch 拆成 input_ids 等送进模型，取出 loss
+            loss.backward()  # 反传：把梯度写进 params 里每个张量的 .grad
+            optimizer.step()  # 按 SGD 用 .grad 真正改权重（LoRA 时只改补丁）
+            last_loss = float(loss.detach().cpu())  # 断开计算图并拷到 CPU，变成普通 Python 数
             if device.type == "mps":
+                # MPS 是异步的：不 synchronize，计时会偏短（GPU 还在算，Python 已经往下走了）
                 sync = getattr(torch.mps, "synchronize", None)
                 if callable(sync):
-                    sync()
-            times.append(time.perf_counter() - t0)
+                    sync()  # 等到这块设备上的计算真正做完，再停表
+            times.append(time.perf_counter() - t0)  # 本步耗时 = 现在 - 起步时刻
     except RuntimeError as e:
+        # 内存不够时抓住，当成合法实验结果，不要让整段脚本崩掉。
         if "out of memory" in str(e).lower() or "oom" in str(e).lower():
             oom = True
             err = str(e)
         else:
-            raise
-    avg = sum(times) / len(times) if times else None
+            raise  # 其它 RuntimeError（比如形状不对）不是本函数该吞的，原样抛出
+    avg = sum(times) / len(times) if times else None  # 有成功步才算平均秒/步，否则 —
     return {
-        "steps": steps,
-        "oom": oom,
-        "error": err,
-        "avg_step_s": avg,
-        "steps_per_s": (1.0 / avg) if avg else None,
-        "last_loss": last_loss,
-        "rss_mb": rss_mb(),
+        "steps": steps,  # 计划跑几步（OOM 时实际可能更少，见 n_times 没有单独返回）
+        "oom": oom,  # 是否 OOM
+        "error": err,  # OOM 原文；成功时为空串
+        "avg_step_s": avg,  # 平均每步多少秒
+        "steps_per_s": (1.0 / avg) if avg else None,  # 每秒能走几步，avg 为空则没有
+        "last_loss": last_loss,  # 最后一次成功 step 的 loss
+        "rss_mb": rss_mb(),  # 进程内存高水位（粗），给 04～07 对照用
     }
 
 
