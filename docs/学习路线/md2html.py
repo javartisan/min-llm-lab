@@ -35,8 +35,22 @@ def ensure_markdown():
         subprocess.check_call([sys.executable, "-m", "pip", "install", "markdown"])
 
 
+def ensure_pygments():
+    try:
+        import pygments  # noqa: F401
+    except ImportError:
+        import subprocess
+
+        print("缺少依赖 pygments，正在安装…")
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "pygments"])
+
+
 ensure_markdown()
+ensure_pygments()
 import markdown  # noqa: E402
+from pygments import highlight  # noqa: E402
+from pygments.formatters import HtmlFormatter  # noqa: E402
+from pygments.lexers import BashLexer, PythonLexer, TextLexer, get_lexer_by_name  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent
 MD_LINK_RE = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
@@ -221,6 +235,148 @@ blockquote {
 """
 
 
+CODE_LAB_CSS = """
+/* 第 1 周代码学习：铺满右侧，IDE 风格代码窗 */
+body.page-code-lab {
+  --ide-bg: #1e1e1e;
+  --ide-bar: #252526;
+  --ide-border: #3c3c3c;
+  --ide-gutter: #858585;
+  --ide-fg: #d4d4d4;
+}
+body.page-code-lab .layout {
+  grid-template-columns: 280px minmax(0, 1fr);
+}
+body.page-code-lab .main {
+  padding: 16px 18px 48px;
+  min-width: 0;
+  width: 100%;
+}
+body.page-code-lab article {
+  max-width: none;
+  width: 100%;
+  padding: 22px 22px 40px;
+}
+body.page-code-lab .refs,
+body.page-code-lab .footer {
+  max-width: none;
+  width: 100%;
+}
+body.page-code-lab .script-index {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 8px 14px;
+  list-style: none;
+  padding: 0;
+  margin: 1em 0 1.5em;
+}
+body.page-code-lab .script-index li {
+  margin: 0;
+  background: #f5f5f4;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+body.page-code-lab .script-index a { font-weight: 600; }
+.ide-window {
+  border: 1px solid var(--ide-border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 12px 0 22px;
+  background: var(--ide-bg);
+  box-shadow: 0 12px 32px rgba(0,0,0,.28);
+  width: 100%;
+}
+.ide-titlebar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 38px;
+  padding: 0 12px;
+  background: var(--ide-bar);
+  border-bottom: 1px solid var(--ide-border);
+  color: #cccccc;
+  font-size: 12.5px;
+  font-family: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  user-select: none;
+}
+.ide-dots { display: flex; gap: 6px; flex-shrink: 0; }
+.ide-dots i {
+  width: 10px; height: 10px; border-radius: 50%; display: block;
+}
+.ide-dots i:nth-child(1) { background: #ff5f56; }
+.ide-dots i:nth-child(2) { background: #ffbd2e; }
+.ide-dots i:nth-child(3) { background: #27c93f; }
+.ide-filename {
+  flex: 1;
+  text-align: center;
+  color: #d4d4d4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ide-badge {
+  flex-shrink: 0;
+  font-size: 11px;
+  color: #9cdcfe;
+  background: #2b2b2b;
+  border: 1px solid #3c3c3c;
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+.ide-window .ide-hltable {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.ide-window .ide-hltable td {
+  border: 0;
+  padding: 0;
+  vertical-align: top;
+}
+.ide-window .linenos {
+  width: 3.2em;
+  background: #1e1e1e;
+  color: var(--ide-gutter);
+  text-align: right;
+  user-select: none;
+  padding: 12px 8px 12px 10px !important;
+  border-right: 1px solid #2d2d2d !important;
+}
+.ide-window .linenos pre,
+.ide-window .code pre {
+  margin: 0;
+  background: transparent;
+  max-height: none;
+  border-radius: 0;
+  padding: 12px 14px 16px 12px;
+  overflow: visible;
+  color: var(--ide-fg);
+  font-family: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.55;
+  tab-size: 4;
+}
+.ide-window .linenos pre { padding-right: 0; padding-left: 0; }
+.ide-window .code {
+  width: 100%;
+  overflow: auto;
+  max-height: min(72vh, 52rem);
+  background: var(--ide-bg);
+}
+.ide-window .ide-hl { background: var(--ide-bg); }
+.ide-window .ide-hl, .ide-window .code, .ide-window .linenos {
+  background-color: var(--ide-bg) !important;
+}
+.ide-window.ide-term .ide-badge { color: #b5cea8; }
+.ide-window.ide-term .code pre { color: #d4d4d4; }
+"""
+
+
 NAV_TREE = [
     ("首页", "index.html"),
     ("学习大纲", "学习大纲.html"),
@@ -380,6 +536,92 @@ def render_md(md_text: str) -> str:
     )
 
 
+PRE_BLOCK_RE = re.compile(
+    r"<pre><code(?:\s+class=\"language-([^\"]+)\")?>(.*?)</code></pre>",
+    re.S,
+)
+H2_RE = re.compile(r"<h2[^>]*>.*?</h2>", re.S)
+H3_RE = re.compile(r"<h3[^>]*>.*?</h3>", re.S)
+TAG_RE = re.compile(r"<[^>]+>")
+
+
+def _plain_heading(block: str) -> str:
+    return html.unescape(TAG_RE.sub("", block)).strip().strip("`")
+
+
+def _lexer_for(lang: str):
+    lang = (lang or "text").lower()
+    if lang in ("python", "py"):
+        return PythonLexer()
+    if lang in ("bash", "sh", "shell"):
+        return BashLexer()
+    try:
+        return get_lexer_by_name(lang)
+    except Exception:
+        return TextLexer()
+
+
+def _ide_formatter() -> HtmlFormatter:
+    return HtmlFormatter(
+        style="monokai",
+        linenos="table",
+        cssclass="ide-hl",
+        wrapcode=True,
+    )
+
+
+def pygments_css() -> str:
+    return _ide_formatter().get_style_defs(".ide-window .ide-hl")
+
+
+def enhance_code_lab(body: str) -> str:
+    """把代码学习页的 fence 换成带行号的 IDE 窗口，目录改成卡片网格。"""
+    body = re.sub(
+        r"(<h2[^>]*>目录</h2>\s*)<ul>",
+        r'\1<ul class="script-index">',
+        body,
+        count=1,
+    )
+
+    formatter = _ide_formatter()
+
+    def replace(match: re.Match) -> str:
+        lang = match.group(1) or "text"
+        raw = html.unescape(match.group(2)).replace("\xa0", " ")
+        if raw.endswith("\n"):
+            raw = raw[:-1]
+        start = match.start()
+        h2s = list(H2_RE.finditer(body, 0, start))
+        h3s = list(H3_RE.finditer(body, 0, start))
+        filename = _plain_heading(h2s[-1].group(0)) if h2s else "code"
+        section = _plain_heading(h3s[-1].group(0)) if h3s else ""
+        is_output = "运行结果" in section or lang == "text"
+        is_cmd = lang in ("bash", "sh", "shell")
+        if is_output:
+            title = f"Terminal — {filename}"
+            badge = "Output"
+            extra_class = " ide-term"
+        elif is_cmd:
+            title = f"Terminal — {filename}"
+            badge = "bash"
+            extra_class = " ide-term"
+        else:
+            title = filename if filename.endswith(".py") else f"{filename}"
+            badge = "Python"
+            extra_class = ""
+        highlighted = highlight(raw, _lexer_for(lang), formatter)
+        return (
+            f'<div class="ide-window{extra_class}">'
+            f'<div class="ide-titlebar">'
+            f'<span class="ide-dots"><i></i><i></i><i></i></span>'
+            f'<span class="ide-filename">{html.escape(title)}</span>'
+            f'<span class="ide-badge">{html.escape(badge)}</span>'
+            f"</div>{highlighted}</div>"
+        )
+
+    return PRE_BLOCK_RE.sub(replace, body)
+
+
 def convert_one(
     src: Path,
     src_root: Path,
@@ -422,6 +664,13 @@ def convert_one(
         )
 
     sidebar = build_sidebar(rel_html, set())
+    is_code_lab = rel_html.name == "第1周代码学习.html"
+    extra_css = ""
+    body_class = ""
+    if is_code_lab:
+        body = enhance_code_lab(body)
+        extra_css = CODE_LAB_CSS + pygments_css()
+        body_class = ' class="page-code-lab"'
 
     page = f"""<!DOCTYPE html>
 <html lang="zh-CN">
@@ -429,9 +678,9 @@ def convert_one(
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{html.escape(title)} · 学习路线</title>
-  <style>{SITE_CSS}</style>
+  <style>{SITE_CSS}{extra_css}</style>
 </head>
-<body>
+<body{body_class}>
   <div class="layout">
     {sidebar}
     <div class="main">
