@@ -60,128 +60,208 @@ TITLE_RE = re.compile(r"^#\s+(.+)$", re.M)
 
 SITE_CSS = """
 :root {
-  --bg: #f4f1ea;
-  --sidebar: #1c1917;
-  --sidebar-text: #e7e5e4;
-  --sidebar-muted: #a8a29e;
-  --card: #fffdf8;
-  --text: #1c1917;
-  --muted: #57534e;
-  --border: #e7e5e4;
-  --link: #0f766e;
-  --link-hover: #115e59;
-  --code-bg: #f5f5f4;
-  --accent: #c2410c;
-  --ref-bg: #ecfdf5;
+  --bg: #f5f5f7;
+  --sidebar: #111113;
+  --sidebar-edge: rgba(255,255,255,.08);
+  --sidebar-text: #f5f5f7;
+  --sidebar-muted: #98989d;
+  --sidebar-hover: rgba(255,255,255,.08);
+  --sidebar-active: rgba(10,132,255,.22);
+  --sidebar-active-text: #64d2ff;
+  --card: #ffffff;
+  --text: #1d1d1f;
+  --muted: #6e6e73;
+  --border: #d2d2d7;
+  --link: #0066cc;
+  --link-hover: #004499;
+  --code-bg: #f2f2f7;
+  --accent: #0071e3;
+  --ref-bg: #f0faf6;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+    "PingFang SC", "Hiragino Sans GB", "Helvetica Neue", "Microsoft YaHei",
+    sans-serif;
+  --font-mono: "SF Mono", ui-monospace, Menlo, Monaco, Consolas, monospace;
+  --sidebar-w: 288px;
 }
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body {
   margin: 0;
-  font-family: "IBM Plex Sans", "PingFang SC", "Hiragino Sans GB",
-    "Microsoft YaHei", sans-serif;
+  font-family: var(--font);
   background: var(--bg);
   color: var(--text);
-  line-height: 1.75;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 .layout {
   display: grid;
-  grid-template-columns: 280px 1fr;
+  grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
   min-height: 100vh;
+  min-height: 100dvh;
 }
 .sidebar {
-  background: var(--sidebar);
+  background:
+    radial-gradient(120% 80% at 0% 0%, rgba(10,132,255,.18), transparent 55%),
+    linear-gradient(180deg, #1c1c1e 0%, var(--sidebar) 48%, #0b0b0d 100%);
   color: var(--sidebar-text);
-  padding: 20px 16px 40px;
+  border-right: 1px solid var(--sidebar-edge);
   position: sticky;
   top: 0;
   height: 100vh;
-  overflow: auto;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
 }
-.sidebar a { color: var(--sidebar-text); text-decoration: none; }
-.sidebar a:hover { color: #fff; }
+.sidebar-top {
+  flex: 0 0 auto;
+  padding: 28px 22px 18px;
+  border-bottom: 1px solid var(--sidebar-edge);
+}
 .sidebar .brand {
-  font-weight: 700;
-  font-size: 16px;
-  letter-spacing: 0.02em;
-  margin: 0 0 6px;
+  font-weight: 650;
+  font-size: 17px;
+  letter-spacing: -0.02em;
+  margin: 0 0 4px;
+  line-height: 1.25;
 }
-.sidebar .brand a { color: #fdba74; }
+.sidebar .brand a {
+  color: #fff;
+  text-decoration: none;
+}
+.sidebar .brand a:hover { opacity: .92; }
 .sidebar .hint {
   color: var(--sidebar-muted);
   font-size: 12px;
-  margin-bottom: 18px;
+  letter-spacing: 0.02em;
+  margin: 0;
 }
+.sidebar-nav {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  justify-content: safe center;
+  padding: 20px 14px 28px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,.2) transparent;
+}
+.sidebar-nav-inner {
+  width: 100%;
+  margin-block: auto;
+}
+.sidebar a { color: var(--sidebar-text); text-decoration: none; }
+.sidebar a:hover { color: #fff; }
 .sidebar h3 {
-  font-size: 12px;
+  font-size: 11px;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   color: var(--sidebar-muted);
-  margin: 18px 0 8px;
+  margin: 18px 8px 8px;
 }
+.sidebar h3:first-child { margin-top: 0; }
 .sidebar ul {
   list-style: none;
   padding: 0;
-  margin: 0 0 8px;
+  margin: 0 0 6px;
 }
 .sidebar li { margin: 0; }
 .sidebar li a {
   display: block;
-  padding: 7px 10px;
-  border-radius: 8px;
-  font-size: 13.5px;
-  line-height: 1.4;
+  padding: 9px 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  transition: background .15s ease, color .15s ease;
+}
+.sidebar li a:hover {
+  background: var(--sidebar-hover);
+  color: #fff;
 }
 .sidebar li a.active {
-  background: #292524;
-  color: #fdba74;
+  background: var(--sidebar-active);
+  color: var(--sidebar-active-text);
+  box-shadow: inset 0 0 0 1px rgba(100,210,255,.28);
 }
 .sidebar .sub {
-  padding-left: 12px;
-  margin-bottom: 10px;
+  padding-left: 10px;
+  margin: 2px 0 10px;
+  border-left: 1px solid var(--sidebar-edge);
+  margin-left: 14px;
 }
 .sidebar .sub a {
-  font-size: 12.5px;
+  font-size: 13px;
+  font-weight: 400;
   color: var(--sidebar-muted);
-  padding: 4px 10px;
+  padding: 6px 10px;
+}
+.sidebar .sub a:hover,
+.sidebar .sub a.active {
+  color: #fff;
 }
 .main {
-  padding: 28px 28px 72px;
+  padding: 36px 28px 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+}
+.main > .crumb,
+.main > article,
+.main > .refs,
+.main > .footer {
+  width: 100%;
+  max-width: 920px;
 }
 .crumb {
   font-size: 13px;
   color: var(--muted);
-  margin-bottom: 14px;
+  margin-bottom: 16px;
+  letter-spacing: -0.01em;
 }
 .crumb a { color: var(--link); text-decoration: none; }
 .crumb a:hover { text-decoration: underline; }
 article {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 28px 34px 36px;
-  box-shadow: 0 10px 30px rgba(28,25,23,.04);
-  max-width: 920px;
+  border-radius: 16px;
+  padding: 32px 36px 40px;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 12px 40px rgba(0,0,0,.04);
 }
-article h1 { margin-top: 0; font-size: 1.85rem; }
+article h1 {
+  margin-top: 0;
+  font-size: 1.9rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+}
 article h2 {
   margin-top: 2em;
-  padding-bottom: .35em;
+  padding-bottom: .4em;
   border-bottom: 1px solid var(--border);
+  font-weight: 650;
+  letter-spacing: -0.02em;
 }
 article a { color: var(--link); }
 article a:hover { color: var(--link-hover); }
 code {
-  font-family: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  font-family: var(--font-mono);
   background: var(--code-bg);
   padding: .12em .38em;
   border-radius: 6px;
   font-size: .9em;
 }
 pre {
-  background: #1c1917;
-  color: #f5f5f4;
-  border-radius: 10px;
+  background: #1c1c1e;
+  color: #f5f5f7;
+  border-radius: 12px;
   padding: 14px 16px;
   overflow: auto;
   max-height: 42rem;
@@ -202,27 +282,27 @@ th, td {
 th { background: var(--code-bg); }
 blockquote {
   margin: 1em 0;
-  padding: .3em 1em;
-  border-left: 4px solid var(--accent);
-  background: #fff7ed;
+  padding: .35em 1em;
+  border-left: 3px solid var(--accent);
+  background: #f2f7ff;
   color: var(--muted);
+  border-radius: 0 10px 10px 0;
 }
 .refs {
-  max-width: 920px;
   margin-top: 18px;
   background: var(--ref-bg);
-  border: 1px solid #a7f3d0;
-  border-radius: 12px;
+  border: 1px solid #b7e4d0;
+  border-radius: 14px;
   padding: 14px 18px;
 }
-.refs h3 { margin: 0 0 8px; font-size: 14px; color: #065f46; }
+.refs h3 { margin: 0 0 8px; font-size: 14px; color: #0d7a55; }
 .refs ul { margin: 0; padding-left: 1.2em; }
 .refs li { margin: 4px 0; font-size: 14px; }
 .footer {
-  max-width: 920px;
-  margin-top: 14px;
+  margin-top: 16px;
   color: var(--muted);
   font-size: 12px;
+  letter-spacing: -0.01em;
 }
 @media (max-width: 900px) {
   .layout { grid-template-columns: 1fr; }
@@ -230,7 +310,15 @@ blockquote {
     position: relative;
     height: auto;
     max-height: none;
+    overflow: visible;
   }
+  .sidebar-nav {
+    justify-content: flex-start;
+    overflow: visible;
+    padding-bottom: 20px;
+  }
+  .sidebar-nav-inner { margin-block: 0; }
+  .main { padding: 20px 16px 56px; align-items: stretch; }
 }
 """
 
@@ -245,12 +333,13 @@ body.page-code-lab {
   --ide-fg: #d4d4d4;
 }
 body.page-code-lab .layout {
-  grid-template-columns: 280px minmax(0, 1fr);
+  grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
 }
 body.page-code-lab .main {
   padding: 16px 18px 48px;
   min-width: 0;
   width: 100%;
+  align-items: stretch;
 }
 body.page-code-lab article {
   max-width: none;
@@ -258,7 +347,8 @@ body.page-code-lab article {
   padding: 22px 22px 40px;
 }
 body.page-code-lab .refs,
-body.page-code-lab .footer {
+body.page-code-lab .footer,
+body.page-code-lab .crumb {
   max-width: none;
   width: 100%;
 }
@@ -299,7 +389,7 @@ body.page-code-lab .script-index a { font-weight: 600; }
   border-bottom: 1px solid var(--ide-border);
   color: #cccccc;
   font-size: 12.5px;
-  font-family: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  font-family: var(--font-mono);
   user-select: none;
 }
 .ide-dots { display: flex; gap: 6px; flex-shrink: 0; }
@@ -356,7 +446,7 @@ body.page-code-lab .script-index a { font-weight: 600; }
   padding: 12px 14px 16px 12px;
   overflow: visible;
   color: var(--ide-fg);
-  font-family: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 13px;
   line-height: 1.55;
   tab-size: 4;
@@ -391,6 +481,7 @@ NAV_MATERIALS = [
     ("第1周知识体系与答疑", "材料/第1周知识体系与答疑.html", [
         ("第 1 周 代码学习", "材料/第1周代码学习.html"),
     ]),
+    ("第2周 Auto 工厂", "材料/第2周-BaseAutoModelClass与Auto家族.html"),
     ("模型文件说明索引", "材料/模型文件说明/README.html"),
     ("01 目录与各文件总览", "材料/模型文件说明/01-目录与各文件总览.html"),
     ("02 tokenizer.json 结构", "材料/模型文件说明/02-tokenizer.json结构说明.html"),
@@ -516,14 +607,21 @@ def build_sidebar(current_rel: Path, out_root_names: set[str]) -> str:
 
     entrances = render_nav(NAV_TREE)
     materials = render_nav(NAV_MATERIALS)
+    home = html.escape(make_relative(current_rel, Path("index.html")))
     return f"""
 <aside class="sidebar">
-  <div class="brand"><a href="{html.escape(make_relative(current_rel, Path('index.html')))}">SmolLM 学习路线</a></div>
-  <div class="hint">Javartisan</div>
-  <h3>入口</h3>
-  <ul>{entrances}</ul>
-  <h3>材料</h3>
-  <ul>{materials}</ul>
+  <div class="sidebar-top">
+    <div class="brand"><a href="{home}">SmolLM 学习路线</a></div>
+    <p class="hint">Javartisan · 学习站点</p>
+  </div>
+  <nav class="sidebar-nav" aria-label="站点导航">
+    <div class="sidebar-nav-inner">
+      <h3>入口</h3>
+      <ul>{entrances}</ul>
+      <h3>材料</h3>
+      <ul>{materials}</ul>
+    </div>
+  </nav>
 </aside>
 """
 
@@ -711,6 +809,7 @@ def build_home(src_root: Path, out_root: Path, graph: dict[Path, list[Path]], ti
         ("6. 疑虑精读", "材料/Encoder-Decoder与LLM问答流程.html", "Encoder/Decoder/向量化"),
         ("7. 微调笔记", "材料/微调学习笔记.html", "SFT / LoRA / DPO"),
         ("8. 模型文件", "材料/模型文件说明/README.html", "config / tokenizer / 权重"),
+        ("9. 第2周 Auto 工厂", "材料/第2周-BaseAutoModelClass与Auto家族.html", "_BaseAutoModelClass / AutoModelFor*"),
     ]
 
     card_html = []

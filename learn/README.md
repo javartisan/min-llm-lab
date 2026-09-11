@@ -5,11 +5,11 @@
 | 目录 | 对应计划 | 主题 |
 |---|---|---|
 | [week01/](./week01/) | 第 1 周 | Tokenizer、Dataset、Forward、Loss、Backward、SFT 格式、评测直觉 |
-
-以后新增：`week02/`（设备与 batch）、`week03/`（LoRA）……按学习计划往后续即可。
+| [week02/](./week02/) | 第 2 周 | 探测设备、CPU vs MPS、batch、梯度累积、360M；配合 [Auto 工厂文档](../docs/学习路线/材料/第2周-BaseAutoModelClass与Auto家族.md) |
 
 一律在**仓库根目录**运行，例如：
 
 ```bash
 python learn/week01/01_load_tokenizer.py
+python learn/week02/01_probe_device.py
 ```

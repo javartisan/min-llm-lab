@@ -54,6 +54,17 @@ python -m http.server 8080
 
 nginx 部署：把 `html/` 设为 `root`，可参考生成的 `html/nginx.example.conf`。
 
+## 发布到 GitHub Pages
+
+把 `html/` 同步到 `javartisan.github.io` 的 `llm/`（先清空再复制，然后 commit / push）：
+
+```bash
+# 在本仓库根目录
+bash docs/学习路线/deploy_github_pages.sh
+```
+
+发布后页面：https://javartisan.github.io/llm/
+
 ## 说明
 
 - 代码在 `learn/`（按周练习）与 `scripts/`（训练/评测），数据在 `data/`，模型在 `models/`。  

@@ -15,6 +15,7 @@
 | [模型文件说明/README.md](./模型文件说明/README.md) | 模型目录里每个文件干什么 | `01_load_tokenizer.py`、`scripts/print_tokens.py` |
 | [01-目录与各文件总览.md](./模型文件说明/01-目录与各文件总览.md) | Base / Instruct / 微调后目录 | 打开 `models/` |
 | [02-tokenizer.json结构说明.md](./模型文件说明/02-tokenizer.json结构说明.md) | 词表、BPE、encode ≠ Encoder | `02`～`05` |
+| [第2周-BaseAutoModelClass与Auto家族.md](./第2周-BaseAutoModelClass与Auto家族.md) | `_BaseAutoModelClass`、继承图、各 `AutoModelFor*` | `week02/02`、`06`；对照 `sft001.py` |
 
 入口：
 
@@ -35,8 +36,18 @@ train/test jsonl     →  06 看样本
 知识体系第 7 节代码导读  →  12 把 8 个框跑一遍（对照 01～11）
 ```
 
+## 第 2 周：材料 → 脚本
+
+```text
+BaseAutoModelClass 文档 §1～§5  →  Day 2：读 Auto 工厂 + 02_move_to_device
+打印 type(model)               →  对照 §7 最小实验
+子类任务分组表                 →  Day 6：360M 仍是 CausalLM 入口
+设备 / batch 实验              →  01～07（与 Auto 概念并行，互不替代）
+```
+
 一律在仓库根目录执行，例如：
 
 ```bash
 python learn/week01/01_load_tokenizer.py
+python learn/week02/01_probe_device.py
 ```
