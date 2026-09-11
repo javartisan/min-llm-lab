@@ -22,6 +22,7 @@ from _common import REPORTS_DIR, RUNS_FILE, fmt
 
 
 def load_runs() -> list[dict]:
+    """读 reports/week03_runs.jsonl：每行一条实验记录。文件不存在则空列表。"""
     if not RUNS_FILE.exists():
         return []
     rows = []
@@ -34,10 +35,15 @@ def load_runs() -> list[dict]:
 
 
 def by_script(rows: list[dict], script: str) -> list[dict]:
+    """筛出某个脚本名（如 04_compare_r）写下的全部记录，保持文件中的顺序。"""
     return [r for r in rows if r.get("script") == script]
 
 
 def main():
+    """入口：汇总本周 jsonl，打印对照表和验收口答，并写出 reports/week03_lora.md。
+
+    还没跑实验时会提示先跑 01～06。三句话总结要自己动手填。
+    """
     rows = load_runs()
     print("=" * 60)
     print("第 3 周复盘")
@@ -113,6 +119,20 @@ def main():
             print(f"    原因: {r['error'][:180]}")
 
     print()
+    print("-" * 60)
+    print("对照  135M 全量 SFT（09）")
+    print("-" * 60)
+    rec9 = by_script(rows, "09_full_sft_135m")
+    if not rec9:
+        print("  未运行 09。可选：python learn/week03/09_full_sft_135m.py")
+    for r in rec9:
+        print(
+            f"  {r.get('model')}  可训练={r.get('full_trainable')}  "
+            f"占比%={r.get('trainable_pct')}  loss={fmt(r.get('train_loss'))}"
+        )
+        print(f"  输出: {r.get('output')}")
+
+    print()
     print("=" * 60)
     print("验收口答（先自己答，再对答案方向）")
     print("=" * 60)
@@ -183,6 +203,19 @@ def main():
             )
     else:
         lines.append("- 未跑。")
+    lines += [
+        "",
+        "## 135M 全量 SFT（09，对照 LoRA）",
+        "",
+    ]
+    if rec9:
+        for r in rec9:
+            lines.append(
+                f"- {r.get('model')} 可训练={r.get('full_trainable')} "
+                f"loss={fmt(r.get('train_loss'))} 输出={r.get('output')}"
+            )
+    else:
+        lines.append("- 未跑。可选：`python learn/week03/09_full_sft_135m.py`")
     lines += [
         "",
         "## 三句话总结（自己填）",

@@ -44,6 +44,7 @@ from _common import (
 
 
 def size_line(path, label: str) -> None:
+    """打印一行「有/无 + 路径 + 体积」，给 adapter / merge 文件对照用。"""
     exists = path.exists()
     extra = size_label(path)
     flag = "有" if exists else "无"
@@ -53,6 +54,11 @@ def size_line(path, label: str) -> None:
 
 
 def main():
+    """入口：对照 adapter（小补丁）和 merge 后完整模型的位置与体积。
+
+    没有 checkpoint 也能把概念讲完。会搜索仓库里所有 adapter_config.json，
+    并把是否找到、体积写入 jsonl。
+    """
     print("=" * 60)
     print("【1】本仓库约定的两个位置")
     print("=" * 60)

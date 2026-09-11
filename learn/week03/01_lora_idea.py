@@ -102,6 +102,11 @@ def full_params(in_f: int, out_f: int) -> int:
 
 
 def main():
+    """入口：不加载大模型，用一层线性的数量级把 r / alpha / target_modules 讲清楚。
+
+    打印全量 vs LoRA 参数表、缩放 alpha/r、sft001 默认打在哪些层，
+    并往 week03_runs.jsonl 写一条演示记录给 08 复盘。
+    """
     print("=" * 60)
     print("【1】一张线性层：全量 vs LoRA 参数量")
     print("=" * 60)

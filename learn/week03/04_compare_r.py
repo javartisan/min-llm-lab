@@ -37,6 +37,10 @@ from _common import ALL_MODULES, fmt, run_lora_tiny
 
 
 def main():
+    """入口：只改 r（8 vs 16），其它超参与 sft001 对齐，各跑极少步后打表。
+
+    注意 alpha 固定为 32 时，r 变小会使缩放 alpha/r 变大。看可训练参数是否约翻倍。
+    """
     print("固定：alpha=32, dropout=0.05, 模块=注意力+MLP")
     print(f"模块列表：{ALL_MODULES}")
     print("只改 r。每次重新加载 135M，避免两次实验互相污染。")

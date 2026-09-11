@@ -34,6 +34,10 @@ from _common import ALL_MODULES, ATTN_MODULES, fmt, run_lora_tiny
 
 
 def main():
+    """入口：只改 target_modules——全投影 vs 只打注意力，看可训练参数少多少。
+
+    模块名必须和模型里的 q_proj 等一致，打错会匹配不到层。
+    """
     print("固定：r=16, alpha=32, dropout=0.05")
     print(f"方案 A 全投影     : {ALL_MODULES}")
     print(f"方案 B 只注意力   : {ATTN_MODULES}")

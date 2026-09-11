@@ -1,7 +1,8 @@
 """第 3 周共用工具：注入 LoRA、数可训练参数、跑极少步、记实验。
 
 本周一句话：冻住大模型权重，只训练旁路小补丁（A、B 矩阵）。
-正式训练仍用 scripts/sft001.py；这里把概念拆开看。
+正式 LoRA 训练：scripts/sft001.py。
+正式全量对照：learn/week03/09_full_sft_135m.py（不传 peft_config）。
 """
 
 from __future__ import annotations
@@ -20,6 +21,11 @@ import torch.backends.mps as _mps
 if not hasattr(_mps, "is_macos_or_newer"):
 
     def _is_macos_or_newer(major: int, minor: int = 0) -> bool:
+        """兼容补丁：新版 transformers 会问「是不是够新的 macOS」。
+
+        Intel Mac 上的 PyTorch 2.2.2 没有这个函数，不补会在加载模型时直接报错。
+        这里用旧 API is_macos13_or_newer 拼出同样的是/否。
+        """
         if major > 13:
             return False
         if major == 13:
@@ -58,18 +64,33 @@ ALL_MODULES = ATTN_MODULES + MLP_MODULES
 
 
 def patch_hf_mirror() -> None:
+    """国内访问 Hugging Face 不稳定时，默认改走 hf-mirror 镜像。
+
+    setdefault：如果环境变量里已经设了 HF_ENDPOINT，就尊重你的设置，不覆盖。
+    """
     os.environ.setdefault("HF_ENDPOINT", "https://hf-mirror.com")
 
 
 def mps_available() -> bool:
+    """本机现在能不能用苹果 GPU（MPS）。
+
+    要同时满足：这份 PyTorch 带了 mps 后端，并且当前机器 is_available()==True。
+    Intel Mac + 旧轮子上经常是 False，后面就会退回 CPU。
+    """
     return bool(getattr(torch.backends, "mps", None)) and torch.backends.mps.is_available()
 
 
 def pick_device() -> torch.device:
+    """选出本周脚本默认把模型和张量送到哪：有 MPS 用 MPS，否则 CPU。"""
     return torch.device("mps") if mps_available() else torch.device("cpu")
 
 
 def rss_mb() -> float:
+    """当前进程内存高水位，单位 MB（粗，只能看趋势）。
+
+    macOS 的 ru_maxrss 是字节；Linux 一般是 KB。不能用来证明「小 batch 更省」，
+    同进程里这个值往往只升不降。
+    """
     ru = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
     if sys.platform == "darwin":
         return ru / (1024 * 1024)
@@ -77,6 +98,12 @@ def rss_mb() -> float:
 
 
 def find_model_dir(size: str = "135m") -> Path:
+    """在 models/ 里找一份能用的本地权重目录（必须有 config.json）。
+
+    size 以 1.7 / 1p7 开头就找 1.7B，否则找 135M。
+    按 MODELS_135 / MODELS_1P7 的顺序取第一个命中的，优先 Instruct。
+    找不到就抛 FileNotFoundError，并提示怎么下载。
+    """
     cands = MODELS_1P7 if size.lower().startswith("1.7") or size.lower().startswith("1p7") else MODELS_135
     for path in cands:
         if (path / "config.json").exists():
@@ -87,6 +114,11 @@ def find_model_dir(size: str = "135m") -> Path:
 
 
 def load_causal_lm(model_dir: Path, device: torch.device):
+    """从本地目录加载 tokenizer + CausalLM，并搬到指定设备。
+
+    local_files_only=True：禁止悄悄联网。没有 pad_token 时用 eos 顶上，
+    否则 padding 组 batch 会报错。返回 (tokenizer, model)。
+    """
     tokenizer = AutoTokenizer.from_pretrained(model_dir, local_files_only=True)
     model = AutoModelForCausalLM.from_pretrained(model_dir, local_files_only=True)
     if tokenizer.pad_token is None:
@@ -96,6 +128,10 @@ def load_causal_lm(model_dir: Path, device: torch.device):
 
 
 def free_model(model) -> None:
+    """删掉模型引用并尽量清缓存，方便同一脚本里连续跑两组对照。
+
+    Python 不会立刻把内存还给系统；MPS 上再调 empty_cache 只是尽量腾显存。
+    """
     del model
     gc.collect()
     if mps_available() and hasattr(torch, "mps"):
@@ -105,12 +141,18 @@ def free_model(model) -> None:
 
 
 def count_params(model) -> tuple[int, int]:
+    """数参数：(总个数, 可训练个数)。
+
+    numel() 是一张张量里有多少个数。requires_grad=True 才会被 optimizer 更新。
+    挂 LoRA 前后各数一次，就能看出「全量 vs 只训补丁」。
+    """
     total = sum(p.numel() for p in model.parameters())
     trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
     return total, trainable
 
 
 def pct(trainable: int, total: int) -> float:
+    """可训练参数占总参数的百分比。total=0 时返回 0，避免除零。"""
     return 100.0 * trainable / total if total else 0.0
 
 
@@ -120,7 +162,14 @@ def make_lora_config(
     lora_dropout: float = 0.05,
     target_modules: list[str] | None = None,
 ) -> LoraConfig:
-    """默认值对齐 scripts/sft001.py 的 build_lora_config。"""
+    """组装一份 LoraConfig，默认值和 scripts/sft001.py 对齐。
+
+    r           秩，旁路有多厚
+    lora_alpha  与 r 一起决定缩放 alpha/r
+    lora_dropout 训练时随机丢掉一部分旁路
+    target_modules 打在哪些线性层；None 则用注意力+MLP 全投影
+    task_type=CAUSAL_LM：从左到右生成的语言模型
+    """
     return LoraConfig(
         r=r,
         lora_alpha=lora_alpha,
@@ -132,11 +181,21 @@ def make_lora_config(
 
 
 def inject_lora(model, config: LoraConfig):
-    """冻底座，挂上 LoRA 旁路。返回 PeftModel。"""
+    """把 LoRA 旁路打进模型：冻住原权重，只让新的 A/B 可训练。
+
+    底层是 peft.get_peft_model。返回 PeftModel，前向仍走「底座 + 旁路」。
+
+    Peft 是 "Parameter-Efficient Fine-Tuning" 的缩写，指一种在大型预训练模型（如大语言模型）上进行微调时，只调整少量参数而非全部参数的技术。
+    """
     return get_peft_model(model, config)
 
 
 def load_texts(n: int) -> list[str]:
+    """从 data/train.jsonl 取 n 条，把 prompt+completion 拼成短文本。
+
+    只为组一个小 batch 做极少步练习，不是认真的 SFT 数据管线。
+    条数不够就循环重复已有样本。
+    """
     texts: list[str] = []
     with TRAIN_FILE.open(encoding="utf-8") as f:
         for line in f:
@@ -155,6 +214,11 @@ def load_texts(n: int) -> list[str]:
 
 
 def make_batch(tokenizer, texts: list[str], device: torch.device, max_length: int = 64) -> dict:
+    """把若干字符串编成模型能吃的一个 batch。
+
+    padding/truncation 后得到 input_ids、attention_mask，并搬到 device。
+    labels 先复制 input_ids：练习脚本对整段算 loss，正式 SFT 往往只对 assistant 计损失。
+    """
     enc = tokenizer(
         texts,
         return_tensors="pt",
@@ -168,7 +232,11 @@ def make_batch(tokenizer, texts: list[str], device: torch.device, max_length: in
 
 
 def timed_train_steps(model, batch: dict, *, steps: int = 3, lr: float = 1e-4) -> dict:
-    """极少步：只为看 loss/速度/谁在更新。不是完整 SFT。"""
+    """跑极少步：Forward → Loss → backward → step，记下耗时 / loss / 是否 OOM。
+
+    只优化 requires_grad=True 的参数（挂 LoRA 后就是补丁）。
+    先空跑一步清掉编译/缓存干扰，再计时。不是完整 SFT，不要看这几步比效果。
+    """
     model.train()
     params = [p for p in model.parameters() if p.requires_grad]
     optimizer = torch.optim.SGD(params, lr=lr)
@@ -213,13 +281,14 @@ def timed_train_steps(model, batch: dict, *, steps: int = 3, lr: float = 1e-4) -
 
 
 def human_mb(path: Path) -> float | None:
+    """普通文件大小（MB）。不存在或不是文件则返回 None，给 jsonl 用。"""
     if not path.exists() or not path.is_file():
         return None
     return path.stat().st_size / (1024 * 1024)
 
 
 def size_label(path: Path) -> str:
-    """给人看的体积：很小的 json 用 KB，权重用 MB。"""
+    """给人看的体积字符串：很小的 json 用 KB，权重大文件用 MB。"""
     if not path.exists():
         return "不存在"
     if path.is_dir():
@@ -231,7 +300,10 @@ def size_label(path: Path) -> str:
 
 
 def find_adapter_dirs() -> list[Path]:
-    """仓库里已有的 LoRA 适配器目录（含 adapter_config.json）。没有也正常。"""
+    """在 checkpoints/ 和 models/ 里找出所有含 adapter_config.json 的目录。
+
+    还没跑过 sft001 时列表为空，Day 2 脚本仍会把 adapter vs merge 的概念讲完。
+    """
     found: list[Path] = []
     for root in (ROOT / "checkpoints", ROOT / "models"):
         if not root.exists():
@@ -242,6 +314,11 @@ def find_adapter_dirs() -> list[Path]:
 
 
 def lora_param_names(model, limit: int = 8) -> list[str]:
+    """抽出名字里带 lora_ 的参数，默认只返回前几条给屏幕上看。
+
+    典型长得像：...self_attn.q_proj.lora_A.default.weight
+    用来确认旁路确实打在了 target_modules 上。
+    """
     names = [n for n, _ in model.named_parameters() if "lora_" in n.lower()]
     return names[:limit]
 
@@ -259,7 +336,12 @@ def run_lora_tiny(
     batch_size: int = 1,
     extra: dict | None = None,
 ) -> dict:
-    """加载 135M → 注入 LoRA → 极少步 → 记 jsonl。每次重新加载，避免配置互相污染。"""
+    """一次完整的「小实验」：加载 135M → 注入指定 LoRA → 极少步 → 写入 jsonl。
+
+    每次重新加载底座，避免 r=8 和 r=16 互相污染。
+    返回的字典给 04/05/06 打表，08 复盘也会读 jsonl。
+    extra 可并入记录（备用）。
+    """
     targets = list(target_modules or ALL_MODULES)
     device = pick_device()
     model_dir = find_model_dir("135m")
@@ -312,6 +394,7 @@ def run_lora_tiny(
 
 
 def fmt(v, digits=3) -> str:
+    """把数字/布尔/空值打成对齐好的短字符串，表格里空缺显示为 —。"""
     if v is None:
         return "—"
     if isinstance(v, bool):
@@ -322,8 +405,13 @@ def fmt(v, digits=3) -> str:
 
 
 def append_run(record: dict) -> None:
+    """把一条实验记录追加进 reports/week03_runs.jsonl，并打上时间戳。
+
+    每行一个 JSON。08_week3_report.py 会读这个文件做周复盘。
+    """
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
     record = dict(record)
     record["ts"] = datetime.now().isoformat(timespec="seconds")
     with RUNS_FILE.open("a", encoding="utf-8") as f:
         f.write(json.dumps(record, ensure_ascii=False) + "\n")
+

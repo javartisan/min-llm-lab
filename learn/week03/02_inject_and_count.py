@@ -48,6 +48,10 @@ from _common import (
 
 
 def main():
+    """入口：把默认 LoRA 打进 135M，对比挂旁路前后的可训练参数，再跑 3 步确认能训。
+
+    对应学习计划 Day 1 后半：对照 sft001 的 LoraConfig，看见「一亿级 → 百万级」。
+    """
     device = pick_device()
     model_dir = find_model_dir("135m")
     print(f"设备 : {device}   模型 : {model_dir.name}")

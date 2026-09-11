@@ -19,4 +19,5 @@ Day 1 先看动画：docs/学习路线/lora_animation.html
     python learn/week03/06_compare_targets.py
     python learn/week03/07_try_1p7b.py
     python learn/week03/08_week3_report.py
+    python learn/week03/09_full_sft_135m.py   # 对照：135M 全量 SFT（无 LoRA）
 """

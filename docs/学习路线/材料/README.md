@@ -60,6 +60,7 @@ adapter vs merge 体积                   →  03（无 checkpoint 也能看概�
 每次只改一个旋钮                        →  04 r / 05 dropout / 06 target_modules
 可选 1.7B + LoRA                        →  07（失败记下瓶颈）
 验收口答 + reports/week03_lora.md       →  08
+135M 全量 SFT 对照（无 LoRA）           →  09_full_sft_135m.py
 ```
 
 一律在仓库根目录执行，例如：

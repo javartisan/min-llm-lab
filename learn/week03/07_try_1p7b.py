@@ -52,6 +52,7 @@ from _common import (
 
 
 def try_find_1p7():
+    """本地有没有 1.7B：有则返回目录，没有返回 None（不抛错，方便跳过）。"""
     try:
         return find_model_dir("1.7b")
     except FileNotFoundError:
@@ -59,6 +60,10 @@ def try_find_1p7():
 
 
 def download_1p7():
+    """从 Hugging Face（经镜像）把 1.7B Instruct 下到 models/SmolLM2-1.7B-Instruct。
+
+    体积远大于 135M。失败不算不及格，记下原因即可。
+    """
     patch_hf_mirror()
     dest = ROOT / "models" / "SmolLM2-1.7B-Instruct"
     print(f"从 {HF_1P7} 下载到 {dest} …")
@@ -76,6 +81,10 @@ def download_1p7():
 
 
 def bench(model_dir, device, steps: int, max_length: int) -> dict:
+    """加载 1.7B → 注入 LoRA → 极少步，返回并记下 load_ok / 秒/步 / OOM。
+
+    加载失败也写 jsonl。达标标准是「能站住」，不是把 1.7B 训好。
+    """
     print()
     print("=" * 60)
     print(f"加载 {model_dir.name}  → {device}")
@@ -128,6 +137,7 @@ def bench(model_dir, device, steps: int, max_length: int) -> dict:
 
 
 def main():
+    """入口：可选挑战 1.7B + LoRA。无本地权重时提示 --download，失败则记录瓶颈后退出。"""
     parser = argparse.ArgumentParser()
     parser.add_argument("--download", action="store_true", help="本地没有 1.7B 时下载")
     parser.add_argument("--steps", type=int, default=1, help="极大模型默认只跑 1 步")

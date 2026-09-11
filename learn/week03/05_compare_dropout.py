@@ -27,6 +27,10 @@ from _common import ALL_MODULES, fmt, run_lora_tiny
 
 
 def main():
+    """入口：只改 lora_dropout（0 vs 0.05），确认参数量几乎不变、配置能跑通。
+
+    3 步 loss 不能证明谁更好。sft001 用 0.05 是小数据上留一点正则。
+    """
     print("固定：r=16, alpha=32, 模块=注意力+MLP")
     print("只改 lora_dropout = 0.0 / 0.05")
     print()
