@@ -482,6 +482,7 @@ NAV_MATERIALS = [
         ("第 1 周 代码学习", "材料/第1周代码学习.html"),
     ]),
     ("第2周 Auto 工厂", "材料/第2周-BaseAutoModelClass与Auto家族.html"),
+    ("第2周 上下文长度", "材料/第2周-模型上下文长度涉及的因素.html"),
     ("模型文件说明索引", "材料/模型文件说明/README.html"),
     ("01 目录与各文件总览", "材料/模型文件说明/01-目录与各文件总览.html"),
     ("02 tokenizer.json 结构", "材料/模型文件说明/02-tokenizer.json结构说明.html"),
@@ -810,6 +811,7 @@ def build_home(src_root: Path, out_root: Path, graph: dict[Path, list[Path]], ti
         ("7. 微调笔记", "材料/微调学习笔记.html", "SFT / LoRA / DPO"),
         ("8. 模型文件", "材料/模型文件说明/README.html", "config / tokenizer / 权重"),
         ("9. 第2周 Auto 工厂", "材料/第2周-BaseAutoModelClass与Auto家族.html", "_BaseAutoModelClass / AutoModelFor*"),
+        ("10. 第2周 上下文长度", "材料/第2周-模型上下文长度涉及的因素.html", "出厂窗口 vs num_ctx / 为何难到 1M"),
     ]
 
     card_html = []
